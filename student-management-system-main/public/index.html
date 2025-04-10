@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/boostrap/bootstrap.min.css" />
+    <title>Mcms</title>
+  </head>
+
+  <body>
+    <section class="container pt-4">    
+      <div class="pt-3">
+        <div class="text-center">
+          <h3 class="mb-4">
+            SVU College of Commerce, Management & Computer Science
+          </h3>
+          <p class="lead text-center">
+            The college is committed to unlocking the potential of each
+            individual, igniting their minds, and enriching their lives. With
+            Degree and PG College as your educational partner, you can embark on
+            a journey of self-discovery, realizing your true potential and
+            paving the way to a bright and promising future.
+          </p>
+        </div>
+        <div class="text-center mb-3">
+          <button
+          class="btn-outline-primary btn mb-3"
+          data-bs-toggle="modal"
+          data-bs-target="#loginModel"
+        >
+          Sign In
+        </button>
+        </div>
+      </div>
+      <div class="album py-2">
+        <div class="container">
+          <h2 class="fw-light mb-4 text-center">Available courses</h2>
+          <div
+            class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3 g-3 text-center"
+            id="courses-list"
+          ></div>
+        </div>
+      </div>  
+    </section>
+
+    <script src="/boostrap/bootstrap.min.js"></script>
+
+    <script src="util.js"></script>
+    <script src="forms.js"></script>
+    <script>
+      const teachingGrades = {};
+
+      document.body.append(
+        createModal("loginModel", "Login As", loginForm.outerHTML)
+      );
+
+      fetch("/api/courses", {
+        method: "get",
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          loadCourses(json);
+        });
+
+      function login(event) {
+        let form = document.forms[0];
+        let errorLabel = document.getElementById("errorLabel");
+
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+          form.classList.add("was-validated");
+        } else {
+          console.log("I am in else");
+          userLogin();
+        }
+      }
+
+      async function userLogin() {
+        let errorLabel = document.getElementById("errorLabel");
+        let form = document.forms[0];
+        let body = {
+          userName: form["userName"].value,
+          password: form["password"].value,
+          userType: form["userType"].value,
+        };
+        let response = await fetch("/api/login", {
+          method: "POST",
+          headers: {
+            "Content-type": "application/json",
+          },
+          body: JSON.stringify(body),
+        });
+        console.log(response);
+        let json = await response.json();
+        if (response.status == 200) {
+          errorLabel.textContent = json.message;
+          const user = body.userType.toLowerCase();
+          if (user == "admin") window.location.href = "admin?nav=courses";
+          else window.location.href = `${user}`;
+          form.reset;
+        } else if (response.status == 401) {
+          errorLabel.textContent = json.message;
+        } else if (response.status == 406) {
+        }
+        console.log(json);
+      }
+
+      let coursesList = document.querySelector("#courses-list");
+      function loadCourses(courses) {
+        coursesList.innerHTML = "";
+        courses.forEach((course) => {
+          coursesList.innerHTML += `
+          <div class="col">
+            <div class="card shadow-sm h-100">
+              <div class="p-3 pt-3">
+                <h4 class="card-title">${course.name}</h4>
+              </div>
+              <div class="card-body">
+                <h5 class="fw-normal">${course.shortName}</h5>
+                <p class="card-text text-center">${course.description}</p>
+              </div>
+            </div>
+          </div>`;
+        });
+      }
+    </script>
+  </body>
+</html>
